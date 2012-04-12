@@ -39,7 +39,7 @@
 
 namespace _ABSEARCH {
 static int   timeout;
-static bool global_abort;
+static Abort* global_abort;
 static int   search_done;
 static u64   start_wall_time;
 static int   bestmove;
@@ -73,7 +73,7 @@ int ABSearch(ABState* g, int max_depth, int search_time,
 aborts currently running alpha beta search
    */
 static void abortSearch() {
-  global_abort = true;
+  global_abort->abort();
 }
 
 //can be called to get the index of the best known move so far
@@ -295,7 +295,7 @@ static void timer_thread(void)
 {
      for (;;) {
       if (new_wall_time() >= (u64) timeout * 1000 + start_wall_time) {
-           global_abort = true;
+           global_abort->abort();
            return;
       }
       if (search_done) return;
@@ -305,7 +305,7 @@ static void timer_thread(void)
 
 static void timeout_handler( int signum )
 {
-  global_abort = true;
+  global_abort->abort();
 }
 
 
@@ -404,7 +404,10 @@ int ABSearch(ABState* g, int max_depth, int search_time,
   //done in only this ABSearch
   prev_move = 0;
 
-  global_abort = false;
+  if (global_abort != NULL) {
+    delete global_abort;
+  }
+  global_abort = new Abort();
   search_done = 0;
   cilk_spawn timer_thread();
   //iterative deepening loop
@@ -423,7 +426,7 @@ int ABSearch(ABState* g, int max_depth, int search_time,
       nc += nodec[i];
     total_nc += nc;
 
-    if (global_abort) 
+    if (global_abort->isAborted()) 
       break;
     tt = seconds() - starttime;
     if(f) {
@@ -544,7 +547,7 @@ int search(ABState *prev, ABState *next, int depth ) {
       return prune;
     };
 
-	if (global_abort) {
+	if (global_abort->isAborted()) {
       return 0;
   }
 	
@@ -611,7 +614,7 @@ int search(ABState *prev, ABState *next, int depth ) {
   /* cycle through all the moves */
 
 	//if  aborted this result does not matter
-  if (global_abort) {
+  if (global_abort->isAborted()) {
     return 0;
   }
 
