@@ -405,11 +405,19 @@ bool KhetState::isOppositeDirections(Rotation dir1, Rotation dir2) {
   return true;
 }
 
+// for measuring program performance
+long prof_samples[10000];
+int prof_i = 0;
+
 //generates all moves and returns the number of moves 
 long KhetState::gen() 
 {
   PlayerColor fctm = ctm;
   moves.clear();
+
+  // for measuring program performance
+  struct timespec start;
+  struct timespec end;
 
   for (int rank = 0; rank < 8; rank++) {
     for (int file = 0; file < 10; file++) {
@@ -446,6 +454,9 @@ long KhetState::gen()
         case SCARAB:
         case PHAROAH: 
         case PYRAMID: 
+          // measure the performance of the program
+          clock_gettime(CLOCK_REALTIME, &start);
+
           //moveso
           for (int toFileOffset = -1; toFileOffset < 2; toFileOffset++ ) {
             for (int toRankOffset = -1; toRankOffset < 2; toRankOffset++ ) {
@@ -499,14 +510,29 @@ long KhetState::gen()
           }
           //rotations 
           moves.push_back(KhetMove(piece, file, rank, piece.rot, file, rank, rot1));
-          //if(piece.type != SCARAB) {
-          moves.push_back(KhetMove(piece, file, rank, piece.rot, file, rank, rot2));
-          //}
+          if(piece.type != SCARAB) {
+            moves.push_back(KhetMove(piece, file, rank, piece.rot, file, rank, rot2));
+          }
           break;
         default:
           cout << "unknown piece in gen: " << piece.type  << endl;
       }
 
+      // measure performance of the program
+      clock_gettime(CLOCK_REALTIME, &end);
+      if (start.tv_sec == end.tv_sec && prof_i < 10000) {
+        prof_samples[prof_i++] = end.tv_nsec - start.tv_nsec;
+      }
+      // print out measurements
+      if (prof_i == 1000) {
+        long sum = 0;
+        for (int ii = 0; ii < prof_i; ii++) {
+          sum += prof_samples[ii];
+        }
+        long res = sum/1000;
+        prof_i = 0;
+        printf("time: %lu\n", res);
+      }
     }	
   }
   return moves.size();
