@@ -460,21 +460,21 @@ long KhetState::gen()
           //moveso
           for (int toFileOffset = -1; toFileOffset < 2; toFileOffset++ ) {
             for (int toRankOffset = -1; toRankOffset < 2; toRankOffset++ ) {
-              if(toRankOffset == 0 && toFileOffset == 0) continue;//must move
+              if (toRankOffset == 0 && toFileOffset == 0) continue;//must move
 
               int toFile = file + toFileOffset;
               int toRank = rank + toRankOffset;
-              if(toFile > 9 || toFile < 0) continue;//offboard
-              if(toRank > 7 || toRank < 0) continue;//offboard
+              if (toFile > 9 || toFile < 0) continue;//offboard
+              if (toRank > 7 || toRank < 0) continue;//offboard
 
               //certain squares are forbidden on board
-              if(piece.color == RED) {
-                if(toFile == 9) continue;
-                if(toFile == 1 && (toRank == 0 || toRank == 7)) continue;
+              if (piece.color == RED) {
+                if (toFile == 9) continue;
+                if (toFile == 1 && (toRank == 0 || toRank == 7)) continue;
               }
-              if(piece.color == SILVER) {
-                if(toFile == 0) continue;
-                if(toFile == 8 && (toRank == 0 || toRank == 7)) continue;
+              if (piece.color == SILVER) {
+                if (toFile == 0) continue;
+                if (toFile == 8 && (toRank == 0 || toRank == 7)) continue;
               }
 
               //is the target location already occuppied
