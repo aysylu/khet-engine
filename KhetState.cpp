@@ -531,7 +531,7 @@ long KhetState::gen()
         }
         long res = sum/1000;
         prof_i = 0;
-        printf("time: %lu\n", res);
+        printf("%lu\n", res);
       }
     }	
   }
