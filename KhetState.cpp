@@ -480,11 +480,9 @@ long KhetState::gen()
 
               //certain squares are forbidden on board
               if (piece.color == RED) {
-                if (toFile == 9) continue;
-                if (toFile == 1 && (toRank == 0 || toRank == 7)) continue;
+                if ((toFile == 9) || (toFile == 1 && (toRank == 0 || toRank == 7))) continue;
               } else {
-                if (toFile == 0) continue;
-                if (toFile == 8 && (toRank == 0 || toRank == 7)) continue;
+                if ((toFile == 0) || (toFile == 8 && (toRank == 0 || toRank == 7))) continue;
               }
 
               //is the target location already occuppied
@@ -496,13 +494,11 @@ long KhetState::gen()
                 // otherwise, no
                 if (!otherPiece.swap) continue;
 
-                int top_or_bottom = rank == 0 | rank == 7;
-                // if RED
-                int file_flip = otherPiece.color == RED ? file : 9 - file;
-                // is the move legal?
-                int other_legal = file_flip != 9 | (file_flip != 1 & !top_or_bottom);
-
-                if (!other_legal) continue;  
+                if (otherPiece.color == RED) {
+                  if ((file == 9) || (file == 1 && (rank == 0 || rank == 7))) continue;
+                } else {
+                  if ((file == 0) || (file == 8 && (rank == 0 || rank == 7))) continue;
+                }
 
               }
               //valid move
