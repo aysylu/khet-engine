@@ -415,8 +415,6 @@ long KhetState::gen()
   PlayerColor fctm = ctm;
   moves.clear();
 
-//  KhetMove mv;
-
   // for measuring program performance
   struct timespec start;
   struct timespec end;
@@ -425,15 +423,7 @@ long KhetState::gen()
     for (int file = 0; file < 10; file++) {
       KhetPiece piece = board[file][rank];	
 
-      if(( piece.type == EMPTY) || (piece.color !=fctm)) continue;
-
-      // the piece is worth considering
-      // record initial informaiton
-      // th
- //     mv.piece = piece;
-//      mv.fromFile = file;
-//      mv.fromRank = rank;
-//      mv.fromRot = piece.rot;
+      if (( piece.type == EMPTY) || (piece.color !=fctm)) continue;
 
       int rot1 = (piece.rot + 1) % 4;
       int rot2 = (piece.rot + 3) % 4;
@@ -441,22 +431,21 @@ long KhetState::gen()
       switch (piece.type) {
         case SPHINX: 
           //rotations only
-          if(fctm == SILVER) {
-            if(rot1 == UP || rot1 == LEFT) {
+          if (fctm == SILVER) {
+            if (rot1 == UP || rot1 == LEFT) {
                moves.push_back(KhetMove(piece, file, rank, piece.rot,
                   file, rank, rot1));
             }
-            if(rot2 == UP || rot2 == LEFT) {
+            if (rot2 == UP || rot2 == LEFT) {
               moves.push_back(KhetMove(piece, file, rank, piece.rot,
                   file, rank, rot2));
             }
-          }
-          else {
-            if(rot1 == DOWN || rot1 == RIGHT) {
+          } else {
+            if (rot1 == DOWN || rot1 == RIGHT) {
               moves.push_back(KhetMove(piece, file, rank, piece.rot,
                   file, rank, rot1));
             }
-            if(rot2 == DOWN || rot2 == RIGHT) {
+            if (rot2 == DOWN || rot2 == RIGHT) {
               moves.push_back(KhetMove(piece, file, rank, piece.rot,
                   file, rank, rot2));
             }
