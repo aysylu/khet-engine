@@ -465,7 +465,8 @@ long KhetState::gen()
 
               int toFile = file + toFileOffset;
               int toRank = rank + toRankOffset;
-              if (toFile > 9 || toFile < 0 || toRank > 7 || toRank < 0) continue;//offboard
+              if (toFile > 9 || toFile < 0) continue;//offboard
+              if (toRank > 7 || toRank < 0) continue;//offboard
 
               //certain squares are forbidden on board
               if (piece.color == RED) {
@@ -483,11 +484,13 @@ long KhetState::gen()
                 // otherwise, no
                 if (!otherPiece.swap) continue;
 
-                if (otherPiece.color == RED) {
-                  if ((file == 9) || (file == 1 && (rank == 0 || rank == 7))) continue;
-                } else {
-                  if ((file == 0) || (file == 8 && (rank == 0 || rank == 7))) continue;
-                }
+                int top_or_bottom = rank == 0 | rank == 7;
+                // if RED
+                int file_flip = otherPiece.color == RED ? file : 9 - file;
+                // is the move legal?
+                int other_legal = file_flip != 9 & (file_flip != 1 & !top_or_bottom);
+
+                if (!other_legal) continue;  
 
               }
               //valid move
