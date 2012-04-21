@@ -464,8 +464,7 @@ long KhetState::gen()
 
               int toFile = file + toFileOffset;
               int toRank = rank + toRankOffset;
-              if (toFile > 9 || toFile < 0) continue;//offboard
-              if (toRank > 7 || toRank < 0) continue;//offboard
+              if (toFile > 9 || toFile < 0 || toRank > 7 || toRank < 0) continue;//offboard
 
               //certain squares are forbidden on board
               if (piece.color == RED) {
@@ -491,20 +490,12 @@ long KhetState::gen()
                   if (file == 8 && (rank == 0 || rank == 7)) continue;
                 }
 
-                if (otherPiece.type == PYRAMID || otherPiece.type == ANUBIS) {
-                  //valid swap move
-                  moves.push_back(KhetMove(piece, file, rank, piece.rot, 
-                      toFile, toRank, piece.rot));
-                }
-                else {
+                if (otherPiece.type != PYRAMID || otherPiece.type != ANUBIS)
                   continue;
-                }
               }
-              else {
-                //valid move
-                moves.push_back(KhetMove(piece, file, rank, piece.rot, 
+              //valid move
+              moves.push_back(KhetMove(piece, file, rank, piece.rot, 
                     toFile, toRank, piece.rot));
-              }
             }
           }
           //rotations 
