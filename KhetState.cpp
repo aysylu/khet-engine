@@ -406,8 +406,8 @@ bool KhetState::isOppositeDirections(Rotation dir1, Rotation dir2) {
 }
 
 // for measuring program performance
-long prof_samples[10000];
-int prof_i = 0;
+//long prof_samples[10000];
+//int prof_i = 0;
 
 //generates all moves and returns the number of moves 
 long KhetState::gen() 
@@ -430,33 +430,34 @@ long KhetState::gen()
       //cout << file << " " << rank << endl;
       switch (piece.type) {
         case SPHINX: 
+          // measure the performance of the program
+//          clock_gettime(CLOCK_REALTIME, &start);
           //rotations only
+          int r;
           if (fctm == SILVER) {
             if (rot1 == UP || rot1 == LEFT) {
-               moves.push_back(KhetMove(piece, file, rank, piece.rot,
-                  file, rank, rot1));
+              r = rot1;
             }
             if (rot2 == UP || rot2 == LEFT) {
-              moves.push_back(KhetMove(piece, file, rank, piece.rot,
-                  file, rank, rot2));
+              r = rot2;
             }
           } else {
             if (rot1 == DOWN || rot1 == RIGHT) {
-              moves.push_back(KhetMove(piece, file, rank, piece.rot,
-                  file, rank, rot1));
+              r = rot1;
             }
             if (rot2 == DOWN || rot2 == RIGHT) {
-              moves.push_back(KhetMove(piece, file, rank, piece.rot,
-                  file, rank, rot2));
+              r = rot2;
             }
           }
+          moves.push_back(KhetMove(piece, file, rank, piece.rot,
+                file, rank, r));
           break;
         case ANUBIS: 
         case SCARAB:
         case PHAROAH: 
         case PYRAMID: 
           // measure the performance of the program
-          clock_gettime(CLOCK_REALTIME, &start);
+//          clock_gettime(CLOCK_REALTIME, &start);
 
           //moveso
           for (int toFileOffset = -1; toFileOffset < 2; toFileOffset++ ) {
@@ -509,20 +510,20 @@ long KhetState::gen()
       }
 
       // measure performance of the program
-      clock_gettime(CLOCK_REALTIME, &end);
-      if (start.tv_sec == end.tv_sec && prof_i < 10000) {
-        prof_samples[prof_i++] = end.tv_nsec - start.tv_nsec;
-      }
+//      clock_gettime(CLOCK_REALTIME, &end);
+//      if (start.tv_sec == end.tv_sec && prof_i < 10000) {
+//        prof_samples[prof_i++] = end.tv_nsec - start.tv_nsec;
+//      }
       // print out measurements
-      if (prof_i == 1000) {
-        long sum = 0;
-        for (int ii = 0; ii < prof_i; ii++) {
-          sum += prof_samples[ii];
-        }
-        long res = sum/1000;
-        prof_i = 0;
-        printf("%lu\n", res);
-      }
+//      if (prof_i == 1000) {
+//        long sum = 0;
+//        for (int ii = 0; ii < prof_i; ii++) {
+//          sum += prof_samples[ii];
+//        }
+//        long res = sum/1000;
+//        prof_i = 0;
+//        printf("%lu\n", res);
+//      }
     }	
   }
   return moves.size();
