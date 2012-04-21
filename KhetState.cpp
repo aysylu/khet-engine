@@ -415,6 +415,8 @@ long KhetState::gen()
   PlayerColor fctm = ctm;
   moves.clear();
 
+//  KhetMove mv;
+
   // for measuring program performance
   struct timespec start;
   struct timespec end;
@@ -422,7 +424,17 @@ long KhetState::gen()
   for (int rank = 0; rank < 8; rank++) {
     for (int file = 0; file < 10; file++) {
       KhetPiece piece = board[file][rank];	
+
       if(( piece.type == EMPTY) || (piece.color !=fctm)) continue;
+
+      // the piece is worth considering
+      // record initial informaiton
+      // th
+ //     mv.piece = piece;
+//      mv.fromFile = file;
+//      mv.fromRank = rank;
+//      mv.fromRot = piece.rot;
+
       int rot1 = (piece.rot + 1) % 4;
       int rot2 = (piece.rot + 3) % 4;
       //cout << file << " " << rank << endl;
@@ -479,19 +491,19 @@ long KhetState::gen()
               if (board[toFile][toRank].type != EMPTY) {
                 if (piece.type != SCARAB) continue;//scarabs can swap
                 KhetPiece otherPiece = board[toFile][toRank];
-                  
-                //dont swap the other piece into an illegal square
-                if (otherPiece.color == RED) {
-                  if (file == 9) continue;
-                  if (file == 1 && (rank == 0 || rank == 7)) continue;
-                }
-                if (otherPiece.color == SILVER) {
-                  if (file == 0) continue;
-                  if (file == 8 && (rank == 0 || rank == 7)) continue;
-                }
 
-                if (otherPiece.type != PYRAMID || otherPiece.type != ANUBIS)
-                  continue;
+                // if the piece is PYRAMID or ANUBIS, can swap
+                // otherwise, no
+                if (!otherPiece.swap) continue;
+
+                int top_or_bottom = rank == 0 | rank == 7;
+                // if RED
+                int file_flip = otherPiece.color == RED ? file : 9 - file;
+                // is the move legal?
+                int other_legal = file_flip != 9 | (file_flip != 1 & !top_or_bottom);
+
+                if (!other_legal) continue;  
+
               }
               //valid move
               moves.push_back(KhetMove(piece, file, rank, piece.rot, 
@@ -584,21 +596,27 @@ KhetPiece KhetState::strToPiece(string sq) {
   //determine type
   if(sq[0] == 'a' || sq[0] == 'A') {
     pc.type = ANUBIS;
+    pc.swap = true;
   }
   else if (sq[0] == 'h' || sq[0] == 'H') {
     pc.type = SPHINX;
+    pc.swap = false;
   }
   else if (sq[0] == 'p' || sq[0] == 'P') {
     pc.type = PHAROAH;
+    pc.swap = false;
   }
   else if (sq[0] == 'y' || sq[0] == 'Y') {
     pc.type = PYRAMID;
+    pc.swap = true;
   }
   else if (sq[0] == 's' || sq[0] == 'S') {
     pc.type = SCARAB;
+    pc.swap = false;
   }
   else {
     pc.type = EMPTY;
+    pc.swap = false;
   }
   //determine color
   if(isupper(sq[0], loc)) {

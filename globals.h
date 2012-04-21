@@ -32,6 +32,7 @@ typedef struct KhetPiece {
   PieceType type;
   Rotation rot;
   PlayerColor color;
+  bool swap;
   int id() {
     return 100*(int)color + 10*(int)rot + (int)type;
   }
