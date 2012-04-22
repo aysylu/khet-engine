@@ -39,7 +39,7 @@
 
 namespace _ABSEARCH {
 static int   timeout;
-static Abort* global_abort;
+static Abort* global_abort = NULL;
 static int   search_done;
 static u64   start_wall_time;
 static int   bestmove;
@@ -499,7 +499,8 @@ int root_search(ABState *g, int depth) {
    root_search_catch(search( g, best_state, depth-1, &localAbort), prev_move);
 	 
    /* cycle through all the moves */
-   for(int stateInd = 0; stateInd < next_moves.size(); stateInd++ ) {
+   #pragma cilk grainsize=1
+   cilk_for(int stateInd = 0; stateInd < next_moves.size(); stateInd++ ) {
      ABState* next_state = &next_moves[stateInd]; 
      if( stateInd != prev_move) { 
       root_search_catch(search(g, next_state, depth-1, &localAbort),stateInd);
@@ -535,8 +536,8 @@ int search(ABState *prev, ABState *next, int depth, Abort* localAbort ) {
         if (ret_sc > next->alpha) next->alpha = ret_sc;
         if (next->alpha > next->beta) localAbort->abort();
       }		 
-      m.unlock();
 
+      m.unlock();
       return ret_sc;
     };
 
@@ -611,11 +612,11 @@ int search(ABState *prev, ABState *next, int depth, Abort* localAbort ) {
     return 0;
   }
 
-	for(int stateInd = 0; stateInd < next_moves.size(); stateInd++ ) {
+	cilk_for (int stateInd = 0; stateInd < next_moves.size(); stateInd++ ) {
     if (stateInd != ht_move) {   /* don't try this again */
       ABState* next_state = &next_moves[stateInd]; 
       //search catch returns 1 if pruned
-      if( search_catch( search(next, next_state, depth-1, localAbort), stateInd) ) break;
+      search_catch(search(next, next_state, depth-1, localAbort), stateInd);
     }
 	}
 #if HASH
