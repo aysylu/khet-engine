@@ -479,48 +479,42 @@ int root_search(ABState *g, int depth) {
 		// Inlets are run sequentially
 		m.lock();
 		ret_sc = -ret_sc;
-    int prune = 0;
-
-		if (!(ret_sc > bestscore)) {
-			m.unlock();
-			return prune;
-		}
 
 		if (ret_sc > bestscore) { 
 			bestscore = ret_sc;
 			bestmove = ret_mv;
-			if (ret_sc >= g->beta) {
-        prune = 1;
-			}
+
 			if (ret_sc > g->alpha) g->alpha = ret_sc;
+      if (g->alpha > g->beta) localAbort.abort();
 		}	
 
 		m.unlock();
-		return prune;
+    return ret_sc;
 	};
 
 	 std::vector<ABState> next_moves;
    g->getPossibleStates(next_moves);
 /* search best move from previous iteration first */
    ABState* best_state = &next_moves[prev_move];
-   root_search_catch( search( g, best_state, depth-1), prev_move);
+   root_search_catch(search( g, best_state, depth-1, &localAbort), prev_move);
 	 
    /* cycle through all the moves */
    for(int stateInd = 0; stateInd < next_moves.size(); stateInd++ ) {
      ABState* next_state = &next_moves[stateInd]; 
      if( stateInd != prev_move) { 
-      if( root_search_catch( search(g, next_state, depth-1),stateInd ) )
-        break;
+      root_search_catch(search(g, next_state, depth-1, &localAbort),stateInd);
      }
    }
    //update best move for next iteration
 	 prev_move = bestmove;
 	 return bestscore;
-	 
 }
 
 template <class ABState>
-int search(ABState *prev, ABState *next, int depth ) {
+int search(ABState *prev, ABState *next, int depth, Abort* localAbort ) {
+
+    // poll first, before doing anything at all
+    if (localAbort->isAborted()) return 0;
 
     tbb::mutex m;
     int local_best_move = INF;
@@ -532,26 +526,18 @@ int search(ABState *prev, ABState *next, int depth ) {
 	
     auto search_catch = [&] (int ret_sc, int ret_mv )->int {
       m.lock(); 
-      int prune = 0;
       ret_sc = -ret_sc;
-
-      if (!(ret_sc > bestscore)){
-        m.unlock();
-        return 0;
-      }
 
       if (ret_sc > bestscore) { 
         bestscore = ret_sc;
         local_best_move = ret_mv;
-        if (ret_sc >= next->beta) {
-          prune = 1;
-        }
 
         if (ret_sc > next->alpha) next->alpha = ret_sc;
+        if (next->alpha > next->beta) localAbort->abort();
       }		 
       m.unlock();
 
-      return prune;
+      return ret_sc;
     };
 
 	if (global_abort->isAborted()) {
@@ -602,7 +588,7 @@ int search(ABState *prev, ABState *next, int depth ) {
   //paranoia check to make sure hash table isnot  malfunctioning
   if(next_moves.size() > ht_move ) {
     //focus all resources on searching this move first
-    sc = search( next, &next_moves.at(ht_move), depth-1);
+    sc = search( next, &next_moves.at(ht_move), depth-1, localAbort);
     sc = -sc;
     if (sc > bestscore) { 
       bestscore = sc;
@@ -629,7 +615,7 @@ int search(ABState *prev, ABState *next, int depth ) {
     if (stateInd != ht_move) {   /* don't try this again */
       ABState* next_state = &next_moves[stateInd]; 
       //search catch returns 1 if pruned
-      if( search_catch( search(next, next_state, depth-1), stateInd) ) break;
+      if( search_catch( search(next, next_state, depth-1, localAbort), stateInd) ) break;
     }
 	}
 #if HASH
