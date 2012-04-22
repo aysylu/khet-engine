@@ -35,6 +35,11 @@ string KhetState::getCtmStr() {
 bool KhetState::isWon() {
   return gameOver;
 }
+
+std::vector<KhetMove> KhetState::getValidMoves() {
+  gen();
+  return moves;
+}
     
 void KhetState::getPossibleStates(std::vector<KhetState> &v) {
   if(gameOver) return;

@@ -104,6 +104,9 @@ class KhetState : public _ABSEARCH::ABState<KhetState> {
     //generates all possible mvoes and stores them in moves vector
     long gen();
     void debugMoves();
+    // stores all the moves here to be accessible
+    std::vector<KhetMove> getValidMoves();
+
 
     //fires laser on board from tFile tRank in laserDirection
     //closestToFile and rank are used to measure closest distance from any 

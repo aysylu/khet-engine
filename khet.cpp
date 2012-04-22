@@ -42,18 +42,39 @@ void notate_helper(int best_move, int depth, int score, int nc, double tt) {
         nc,
         (nc / tt) ));
 }
+
 //uses old state and move to generate a new state and save it in newState
-//returns 0 if ok, 1 otherwise
-int uciMakeMove(KhetState* prevState, KhetState* newState, string move) {
+//returns true if ok, false otherwise
+bool uciMakeMove(KhetState* prevState, KhetState* newState, string move) {
 
   *newState = *prevState;
   //maintain history for repetition checking
   newState->his = prevState;
-  if(newState->makeMove(move).compare(move) == 0) {
-    return 0;
+
+  KhetMove mv = newState->makeMove(move);
+
+  // generate the valid moves
+  // and check whether this move is valid
+  bool valid = false;
+
+  std::vector<KhetMove> moves = newState->getValidMoves();
+  for (std::vector<KhetMove>::iterator it = moves.begin();
+    it != moves.end(); it++) {
+    if (it->fromFile != mv.fromFile) continue;
+    if (it->fromRank != mv.fromRank) continue;
+    if (it->fromRot  != mv.fromRot) continue;
+    if (it->toFile   != mv.toFile) continue;
+    if (it->toRank   != mv.toRank) continue;
+    if (it->toRot    != mv.toRot) continue;
+    if (it->piece.type != mv.piece.type) continue;
+    if (it->piece.color != mv.piece.color) continue;
+    // made it this far?
+    // congratulations! this is a valid move
+    valid = true;
+    new (newState) KhetState(prevState, &mv);
+    break;
   }
-  return 1;
-    
+  return valid;
 }
 
 
@@ -131,7 +152,7 @@ void uci() {
         exit(1);
       }
       for(int i = 3; i < token_count; i++) {
-        if(uciMakeMove(&gameHis[ply], &gameHis[ply + 1], tokens[i]) != 0 ) {
+        if(!uciMakeMove(&gameHis[ply], &gameHis[ply + 1], tokens[i])) {
           cout << s <<" Invalid move:" << tokens[i] << endl;
           exit(1);
         }
