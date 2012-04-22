@@ -5,7 +5,7 @@ CC := icpc
 CXX := icpc 
 # You can add -Werr to GCC to force all warnings to turn into errors
 CXXFLAGS := -g -Wall -std=c++0x 
-LDFLAGS = -ltbb
+LDFLAGS = -ltbb -pg
 
 HEADERS := \
 	khet.h \
@@ -27,6 +27,10 @@ OBJS := \
 # Blank line ends list.
 
 OLDMODE := $(shell cat .buildmode 2> /dev/null)
+ifeq ($(PROF),1)
+CFLAGS := -DNDEBUG -O3 -pg $(CFLAGS)
+CXXFLAGS := -DNDEBUG -O3 -pg $(CXXFLAGS)
+endif
 ifeq ($(DEBUG),1)
 CFLAGS := -DDEBUG -O0 $(CFLAGS)
 CXXFLAGS := -DDEBUG -O0 $(CXXFLAGS)
