@@ -94,7 +94,7 @@ static int get_best_move() {
 #define REPWIN 32001
 
 //#define REP 0
-#define HASH 1
+//#define HASH 1
 
 #ifdef HASH
 
@@ -407,6 +407,7 @@ int ABSearch(ABState* g, int max_depth, int search_time,
   if (global_abort != NULL) {
     delete global_abort;
   }
+
   global_abort = new Abort();
   search_done = 0;
   cilk_spawn timer_thread();
@@ -456,6 +457,15 @@ int root_search(ABState *g, int depth) {
 	 int bestscore = -INF;
    tbb::mutex m;
 
+   // create a local Abort
+   // parent of which is global_abort
+   Abort localAbort = Abort(global_abort);
+
+   // set initial alpha and beta values
+   // for the state
+	 g->alpha = -INF;
+	 g->beta = INF;
+     
    //Cilk inlet translation
    //multiple search functions will be spawned from this state but when
    //they return, they may affect the alpha beta values or cause a prune
@@ -489,9 +499,6 @@ int root_search(ABState *g, int depth) {
 		return prune;
 	};
 
-	 g->alpha = -INF;
-	 g->beta = INF;
-     
 	 std::vector<ABState> next_moves;
    g->getPossibleStates(next_moves);
 /* search best move from previous iteration first */
