@@ -60,6 +60,7 @@ typedef struct KhetMove {
   int toFile;
   int toRank;
   int toRot;
+  KhetMove() {};
   KhetMove(KhetPiece p, int fFile, int fRank, int fRot, int tFile, int tRank,
       int tRot) {
     piece = p;
