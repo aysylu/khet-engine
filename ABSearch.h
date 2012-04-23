@@ -39,11 +39,11 @@
 
 namespace _ABSEARCH {
 static int   timeout;
-static Abort* global_abort = NULL;
+static Abort* global_abort;
 static int   search_done;
 static u64   start_wall_time;
 static int   bestmove;
-static int   prev_move=0;   /* best move from last iteration */
+//static int   prev_move=0;   /* best move from last iteration */
 
 static double  seconds();
 static void  init_hash_table();
@@ -402,15 +402,13 @@ int ABSearch(ABState* g, int max_depth, int search_time,
 //  }
   //remember best move from iterations of root search
   //done in only this ABSearch
-  prev_move = 0;
+//  prev_move = 0;
 
   if (global_abort != NULL) {
     delete global_abort;
   }
 
   global_abort = new Abort();
-  search_done = 0;
-  cilk_spawn timer_thread();
   //iterative deepening loop
   for (int depth=1; depth <= max_depth; depth++)
   {
@@ -419,8 +417,11 @@ int ABSearch(ABState* g, int max_depth, int search_time,
     int nc;
 
 
+  search_done = 0;
+  cilk_spawn timer_thread();
     
     score = root_search( g, depth );
+//    printf("root score is %d\n", score);
 
     nc = 0;
     for (int i = 0; i < __cilkrts_get_nworkers(); ++i)
@@ -441,7 +442,7 @@ int ABSearch(ABState* g, int max_depth, int search_time,
   freeHashTable(&tt);
 #endif  
   //we finished search before time. end timer_thread
-  search_done = 1;
+//  search_done = 1;
   return bestmove; 
 }
 
@@ -454,6 +455,7 @@ template<class ABState>
 int root_search(ABState *g, int depth) {
 	 int          mv;
 	 int          sc;
+   static int prev_move = 0;
 	 int bestscore = -INF;
    tbb::mutex m;
 
@@ -461,11 +463,6 @@ int root_search(ABState *g, int depth) {
    // parent of which is global_abort
    Abort localAbort = Abort(global_abort);
 
-   // set initial alpha and beta values
-   // for the state
-	 g->alpha = -INF;
-	 g->beta = INF;
-     
    //Cilk inlet translation
    //multiple search functions will be spawned from this state but when
    //they return, they may affect the alpha beta values or cause a prune
@@ -479,19 +476,36 @@ int root_search(ABState *g, int depth) {
 		// Inlets are run sequentially
 		m.lock();
 		ret_sc = -ret_sc;
+    int prune = 0;
+
+    if (!(ret_sc > bestscore)) {
+      m.unlock();
+      return prune;
+    }
 
 		if (ret_sc > bestscore) { 
 			bestscore = ret_sc;
 			bestmove = ret_mv;
 
-			if (ret_sc > g->alpha) g->alpha = ret_sc;
-      if (g->alpha > g->beta) localAbort.abort();
+      if (ret_sc >= g->beta) {
+        prune = 1;
+        localAbort.abort();
+      }
+			 if (ret_sc > g->alpha) g->alpha = ret_sc;
+//      if (g->alpha > g->beta) localAbort.abort();
 		}	
 
 		m.unlock();
-    return ret_sc;
+//    printf("root_search ret_sc %d\n", ret_sc);
+    return prune;
+//    return ret_sc;
 	};
 
+   // set initial alpha and beta values
+   // for the state
+	 g->alpha = -INF;
+	 g->beta = INF;
+     
 	 std::vector<ABState> next_moves;
    g->getPossibleStates(next_moves);
 /* search best move from previous iteration first */
@@ -508,6 +522,7 @@ int root_search(ABState *g, int depth) {
    }
    //update best move for next iteration
 	 prev_move = bestmove;
+	 search_done = 1;
 	 return bestscore;
 }
 
@@ -515,7 +530,7 @@ template <class ABState>
 int search(ABState *prev, ABState *next, int depth, Abort* localAbort ) {
 
     // poll first, before doing anything at all
-    if (localAbort->isAborted()) return 0;
+//    if (localAbort->isAborted()) return 0;
 
     tbb::mutex m;
     int local_best_move = INF;
@@ -527,21 +542,32 @@ int search(ABState *prev, ABState *next, int depth, Abort* localAbort ) {
 	
     auto search_catch = [&] (int ret_sc, int ret_mv )->int {
       m.lock(); 
+      int prune = 0;
       ret_sc = -ret_sc;
 
+      if (!(ret_sc > bestscore)) {
+        m.unlock();
+        return 0;
+      }
       if (ret_sc > bestscore) { 
         bestscore = ret_sc;
         local_best_move = ret_mv;
+        if (ret_sc >= next->beta) {
+          prune = 1;
+        }
 
         if (ret_sc > next->alpha) next->alpha = ret_sc;
-        if (next->alpha > next->beta) localAbort->abort();
+//        if (next->alpha > next->beta) localAbort->abort();
       }		 
 
       m.unlock();
-      return ret_sc;
+//      printf("search_catch ret_sc %d\n", ret_sc);
+//      return ret_sc;
+      return prune;
     };
 
-	if (global_abort->isAborted()) {
+  //TODO: is this necessary?
+	if (localAbort->isAborted()) {
       return 0;
   }
 	
@@ -608,7 +634,7 @@ int search(ABState *prev, ABState *next, int depth, Abort* localAbort ) {
   /* cycle through all the moves */
 
 	//if  aborted this result does not matter
-  if (global_abort->isAborted()) {
+  if (localAbort->isAborted()) {
     return 0;
   }
 
@@ -631,6 +657,7 @@ int search(ABState *prev, ABState *next, int depth, Abort* localAbort ) {
   }
 #endif
 
+//  printf("search bestscore %d\n", bestscore);
 	return bestscore;
 
 }
