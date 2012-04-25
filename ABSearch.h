@@ -641,7 +641,7 @@ int search(ABState *prev, ABState *next, int depth, Abort* parentAbort ) {
     return 0;
   }
 
-  #pragma cilk grainsize=1
+  #pragma cilk grainsize=2
 	cilk_for (int stateInd = 0; stateInd < next_moves.size(); stateInd++ ) {
     if (stateInd != ht_move) {   /* don't try this again */
       ABState* next_state = &next_moves[stateInd]; 
