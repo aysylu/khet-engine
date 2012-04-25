@@ -1,4 +1,3 @@
-
 /*
 ** Permission is hereby granted, free of charge, to any person
  ** obtaining a copy of this software and associated documentation
@@ -492,13 +491,10 @@ int root_search(ABState *g, int depth) {
         localAbort.abort();
       }
 		  if (ret_sc > g->alpha) g->alpha = ret_sc;
-//      if (g->alpha > g->beta) localAbort.abort();
 		}	
 
 		m.unlock();
-//    printf("root_search ret_sc %d\n", ret_sc);
     return prune;
-//    return ret_sc;
 	};
 
    // set initial alpha and beta values
@@ -513,7 +509,7 @@ int root_search(ABState *g, int depth) {
    root_search_catch(search( g, best_state, depth-1, &localAbort), prev_move);
 	 
    /* cycle through all the moves */
-   #pragma cilk grainsize=2
+   #pragma cilk grainsize=1
    cilk_for(int stateInd = 0; stateInd < next_moves.size(); stateInd++ ) {
      ABState* next_state = &next_moves[stateInd]; 
      if( stateInd != prev_move) { 
@@ -539,6 +535,7 @@ int search(ABState *prev, ABState *next, int depth, Abort* parentAbort ) {
     int old_alpha = prev->alpha;
     int saw_rep = 0;
     std::vector<ABState> next_moves;
+    // create a localAbort object
     Abort localAbort = Abort(parentAbort);
 	
     auto search_catch = [&] (int ret_sc, int ret_mv )->int {
@@ -558,18 +555,14 @@ int search(ABState *prev, ABState *next, int depth, Abort* parentAbort ) {
           prune = 1;
         }
 
-//        if (ret_sc < bestscore) localAbort->abort();
         if (ret_sc > next->alpha) next->alpha = ret_sc;
-//        if (next->alpha >= next->beta) localAbort->abort();
       }		 
 
       m.unlock();
-//      printf("search_catch ret_sc %d\n", ret_sc);
-//      return ret_sc;
       return prune;
     };
 
-  //TODO: is this necessary?
+  // before moving on, check that we haven't been aborted already
 	if (localAbort.isAborted()) {
       return 0;
   }
@@ -641,7 +634,7 @@ int search(ABState *prev, ABState *next, int depth, Abort* parentAbort ) {
     return 0;
   }
 
-  #pragma cilk grainsize=2
+  #pragma cilk grainsize=1
 	cilk_for (int stateInd = 0; stateInd < next_moves.size(); stateInd++ ) {
     if (stateInd != ht_move) {   /* don't try this again */
       ABState* next_state = &next_moves[stateInd]; 
@@ -661,7 +654,6 @@ int search(ABState *prev, ABState *next, int depth, Abort* parentAbort ) {
   }
 #endif
 
-//  printf("search bestscore %d\n", bestscore);
 	return bestscore;
 
 }
