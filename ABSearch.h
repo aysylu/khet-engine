@@ -94,7 +94,7 @@ static int get_best_move() {
 #define REPWIN 32001
 
 //#define REP 0
-//#define HASH 1
+#define HASH 1
 
 #ifdef HASH
 
@@ -478,27 +478,27 @@ int root_search(ABState *g, int depth) {
 		ret_sc = -ret_sc;
     int prune = 0;
 
-    if (!(ret_sc > bestscore)) {
-      m.unlock();
-      return prune;
-    }
+//    if (!(ret_sc > bestscore)) {
+//      m.unlock();
+//      return prune;
+//    }
 
 		if (ret_sc > bestscore) { 
 			bestscore = ret_sc;
 			bestmove = ret_mv;
 
-      if (ret_sc >= g->beta) {
-        prune = 1;
-        localAbort.abort();
-      }
-			 if (ret_sc > g->alpha) g->alpha = ret_sc;
-//      if (g->alpha > g->beta) localAbort.abort();
+//      if (ret_sc >= g->beta) {
+//        prune = 1;
+//        localAbort.abort();
+//      }
+		  if (ret_sc > g->alpha) g->alpha = ret_sc;
+      if (g->alpha > g->beta) localAbort.abort();
 		}	
 
 		m.unlock();
 //    printf("root_search ret_sc %d\n", ret_sc);
-    return prune;
-//    return ret_sc;
+//    return prune;
+    return ret_sc;
 	};
 
    // set initial alpha and beta values
@@ -530,7 +530,7 @@ template <class ABState>
 int search(ABState *prev, ABState *next, int depth, Abort* localAbort ) {
 
     // poll first, before doing anything at all
-//    if (localAbort->isAborted()) return 0;
+    if (localAbort->isAborted()) return 0;
 
     tbb::mutex m;
     int local_best_move = INF;
@@ -542,28 +542,29 @@ int search(ABState *prev, ABState *next, int depth, Abort* localAbort ) {
 	
     auto search_catch = [&] (int ret_sc, int ret_mv )->int {
       m.lock(); 
-      int prune = 0;
+//      int prune = 0;
       ret_sc = -ret_sc;
 
-      if (!(ret_sc > bestscore)) {
-        m.unlock();
-        return 0;
-      }
+//      if (!(ret_sc > bestscore)) {
+//        m.unlock();
+//        return 0;
+//      }
       if (ret_sc > bestscore) { 
         bestscore = ret_sc;
         local_best_move = ret_mv;
-        if (ret_sc >= next->beta) {
-          prune = 1;
-        }
+//        if (ret_sc >= next->beta) {
+//          prune = 1;
+//        }
 
+//        if (ret_sc < bestscore) localAbort->abort();
         if (ret_sc > next->alpha) next->alpha = ret_sc;
-//        if (next->alpha > next->beta) localAbort->abort();
+//        if (next->alpha >= next->beta) localAbort->abort();
       }		 
 
       m.unlock();
 //      printf("search_catch ret_sc %d\n", ret_sc);
-//      return ret_sc;
-      return prune;
+      return ret_sc;
+//      return prune;
     };
 
   //TODO: is this necessary?
